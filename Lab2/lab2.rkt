@@ -68,6 +68,7 @@
 (check-equal? (only-bianchis (list bianchi-bike bianchi-bike gunnar-bike)) (list bianchi-bike bianchi-bike))
 (check-equal? (only-bianchis (list trek-bike gunnar-bike)) '())
 
+
 ;; 6. abstract over the two to obtain the function onlyThese
 (define (onlyThese [l : (Listof Bicycle)] [x : (Any -> Boolean)]) : (Listof Bicycle)
     (match l
@@ -76,11 +77,39 @@
             (if (x f)
             (cons f (onlyThese r x))
             (onlyThese r x))]))
-
-
-
-
+; Test case
+(check-equal? (onlyThese (list trek-bike bianchi-bike gunnar-bike) Trek?) (list trek-bike))
+(check-equal? (onlyThese (list trek-bike bianchi-bike bianchi-bike) Bianchi?) (list bianchi-bike bianchi-bike))
+(check-equal? (onlyThese (list trek-bike bianchi-bike gunnar-bike) Gunnar?) (list gunnar-bike))
 
 
 
 ;; 7. develope the function my-append that consumes two lists and returns second one to the first result
+(define (my-append [l : (Listof Any)] [l2 : (Listof Any)]) : (Listof Any)
+    (match l
+        ['() l2]
+        [(cons f r)
+            (cons f (my-append r l2))]))
+; Test case
+(check-equal? (my-append '() '()) '())
+(check-equal? (my-append '(a b c) '(d e f)) '(a b c d e f))
+(check-equal? (my-append '(a b) '(c d e f)) '(a b c d e f))
+(check-equal? (my-append '(1 2) '()) '(1 2))
+
+
+;; 8. develop the function my-take that consumes a list and a number n and return the first n element
+(define (my-take [l : (Listof Any)] [n : Integer]) : (Listof Any)
+    (if (<= n 0)
+    '()
+    (match l
+        ['() '()]
+        [(cons f r)
+            (cons f (my-take r (- n 1)))])))
+; Test case
+(check-equal? (my-take '() 1) '())
+(check-equal? (my-take '(a b c) 2) '(a b))
+(check-equal? (my-take '(a b c) 0) '())
+
+
+;; 3.1
+;

@@ -2,6 +2,8 @@
 (require typed/rackunit)
 
 ;; Test case usage: (check-equal? ...) or (check-= ...)
+;; No Mutation
+;; Use Real Numbers
 
 
 ;; 2.1 Textbook Problems
