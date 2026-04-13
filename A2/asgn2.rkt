@@ -194,21 +194,25 @@
             (+ 1 (min (min-depth left) (min-depth right)))]))
 
 (check-equal? (min-depth (Leaf 'a)) 0)
-(check-equal? (min-depth (Leaf 'a)) 0)
-(check-equal? (min-depth (Leaf 'a)) 0)
-
-
+(check-equal? (min-depth (Node (Leaf 'a) (Leaf 'b))) 1)
+(check-equal? (min-depth (Node (Node (Leaf 'a) (Node (Leaf 'b) (Leaf 'c))) (Node (Leaf 'd) (Leaf 'e)))) 2)
 
 
 ;; 2.10 Subsitution
     ; Develop the subst function that accpets a source BTree and a symbol and a replacemnet BTree
+    ; source tree first arg
+    ; return a new tree where every leaf of source containg symbol is replaced
+(define (subst [tree : BTree] [symbol : Symbol]) : BTree
+    (match tree
+        [(Leaf _)
+            (Leaf symbol)]
+        [(Node left right)
+            (Node (subst left symbol) (subst right symbol))]))
 
-
-
-
-
-
-
+(check-equal? (subst (Leaf 'a) 'b) (Leaf 'b))
+(check-equal? (subst (Node (Leaf 'a) (Leaf 'b)) 'b) (Node (Leaf 'b) (Leaf 'b)))
+(check-equal? (subst (Node (Node (Leaf 'a) (Node (Leaf 'b) (Leaf 'c))) (Node (Leaf 'd) (Leaf 'e))) 'b)
+                (Node (Node (Leaf 'b) (Node (Leaf 'b) (Leaf 'b))) (Node (Leaf 'b) (Leaf 'b))))
 
 
 
@@ -216,3 +220,7 @@
     ; develop the all-path-lengths function that accepts a binary tree and returns a lsit 
     ; containing the legnths of all of the paths
 
+
+(define (all-path-lengths [tree : BTree]) : List
+    (match tree
+        []))
