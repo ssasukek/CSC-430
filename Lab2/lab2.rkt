@@ -99,6 +99,7 @@
 
 ;; 8. develop the function my-take that consumes a list and a number n and return the first n element
 (define (my-take [l : (Listof Any)] [n : Integer]) : (Listof Any)
+    ;; (if <condition> <if true> <if false>)
     (if (<= n 0)
     '()
     (match l
@@ -112,4 +113,12 @@
 
 
 ;; 3.1
-;
+; Why did we tell you not to use match in writing the only-treks function? 
+    ; What happens if you don’t?
+
+; Does your implementation of the my-take function call length? 
+    ; If so, what is the asymptotic running time of your my-take function?
+
+; How many of these functions can be implemented using map, filter or foldl ?
+
+; How many of these functions can be implemented using for/list ?
