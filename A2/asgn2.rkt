@@ -221,6 +221,6 @@
     ; containing the legnths of all of the paths
 
 
-(define (all-path-lengths [tree : BTree]) : List
-    (match tree
-        []))
+; (define (all-path-lengths [tree : BTree]) : List
+;     (match tree
+;         []))
