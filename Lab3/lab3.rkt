@@ -171,7 +171,7 @@
         [(list '+ l r) (plusC (parser l) (parser r))]
         [(list '* l r) (multC (parser l) (parser r))]
         [(list '^2 a) (sqrC (parser a))]
-        [else (error 'parser "invalid input: ~e" s)]))
+        [other (error 'parser "invalid input: ~e" other)]))
 
 
 ;; Develop the one-line function top-interp
