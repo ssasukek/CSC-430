@@ -44,5 +44,35 @@
   ))
 
 
+;; Subsitution (ch5)
+(define (subst [what : ExprC] [for : symbol] [in : ExprC]) : ExprC
+  (match in
+  [(numC n) in]
+  [(idC s)]
+  [(binopC opr l r)]
+  [(ifleq0 test then else)]
+  [(appC f arg)]
+  ))
+
+
+
+;; Interpret
+(define (interp [exp : ExprC] [fds : (Listof FunDefC)]) : Real
+  (match exp
+  [(numC n) n]
+
+  ))
+
+; interp main from the fundefs
+(define (interp-fns [fds : (Listof FunDefC)]) : Real
+    (interp (appC 'main '()) fds))
+
+
+(define (top-interp [s : Sexp]) : Real
+  (interp-fns (parse-prog s)))
+
+
+
+
 ;; Test Cases (check-equal?, check-=, or check-exn forms)
 ;
