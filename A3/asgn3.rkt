@@ -6,6 +6,8 @@
 ; conditonals -> suppost ifleq0? construct
 ; use lab3 code (s-expression and returns ExprC)
 ; binop (binary operator) 
+; support multi arg and param thru subst
+; eager
 
 
 #lang typed/racket
@@ -31,14 +33,15 @@
         [(list 'ifleq0? test then else) (ifleq0 (parse test) (parse then) (parse else))]
         [(list 'binopC) ()]
         [(list 'appC) ()]
-        [other (error 'parse "Syntax error, given invalid term ~e" other)]))
+        [other (error 'parse "VEBG: Syntax error, given invalid term ~e" other)]))
         
 ; parses a function definition (not done?)
+; (parse-fundef '{named-fn f (x y) -> x})
 (define (parse-fundef [s : Sexp]) : FunDefC
   (match s
-    [(list 'named-fn (? symbol? fname) (? symbol? param) body)
+    [(list 'named-fn (? symbol? fname) (list (? symbol? param) ...) '-> body)
         (FunDefC fname param (parse body))]
-    [other (error 'parse-fundef "failed to parse fundef ~e" other)]))
+    [other (error 'parse-fundef "VEBG: failed to parse fundef ~e" other)]))
 
 ; parse whole program
 (define (parse-prog [s : Sexp]) : (Listof FunDefC)
@@ -85,13 +88,17 @@
 
 ;; Helper Functions
 
+;; handle multiple param / arg
+(define (multi-subst [what : ExprC] [for : symbol] [in : ExprC]) : ExprC
+    (cond
+        [(empty? what) in]
+        [else (multi-subst (rest what) (rest for) subst (first what) (first for) in)]))
+
 ;; lookup table for operator
 ; (define (lookup-opr [opr : Symbol]) : Real
 ;     (match opr
 ;         []))
 
-;; handling multiple params
-; (define (mult-param []))
 
 ;; find the function defintion in the list (from lecture)
 (define (get-fundef [n : Symbol] [fds : (Listof FunDefC)]) : FunDefC
@@ -107,6 +114,8 @@
 
 
 ;; Test Cases (check-equal?, check-=, or check-exn forms)
+
+; interp test
 (check-equal? (interp-fns
                (parse-prog '{{named-fn f (x y) -> {+ x y}}
                              {named-fn main () -> {f 1 2}}}))
@@ -115,6 +124,21 @@
                (parse-prog '{{named-fn f () -> 5}
                              {named-fn main () -> {+ {f} {f}}}}))
               10)
+
+
+
+; parse test
+(check-equal? (parse '1) (numC 5))
+(check-equal? (parse 'x) (numC x))
+(check-equal? (parse '{+ 1 2}) (binopC '+ (numC 1) (numC 2)))
+
+
+; subst tests
+(check-equal? (subst (numC 1) 'x (idC 'x)) (numC 1))
+
+
+; fundef test
+
 
 
 (check-exn #px"wrong arity"
