@@ -17,16 +17,10 @@
 (struct idC ([sym : Symbol]) #:transparent)
 (struct ifleq0 ([test : ExprC] [then : ExprC] [else : ExprC]) #:transparent)
 (struct binopC ([opr : ExprC] [l : ExprC] [r : ExprC]) #:transparent)
-(struct appC ([fname : Symbol] [arg : ExprC]) #:transparent)
+(struct appC ([fname : Symbol] [arg : (Listof ExprC)]) #:transparent)
 
 ;; Add a fundefC structure
 (struct FunDefC ([name : Symbol] [param : Symbol] [body : ExprC]) #:transparent)
-
-
-;; lookup table for operator
-(define (lookup-opr [opr : Symbol]) : Real
-    (match opr
-        []))
 
 ;; Parser - handle zero or more arg
 ; parses an expression (not done)
@@ -39,19 +33,19 @@
         [(list 'appC) ()]
         [other (error 'parse "Syntax error, given invalid term ~e" other)]))
         
-; parses a function definition (not done)
+; parses a function definition (not done?)
 (define (parse-fundef [s : Sexp]) : FunDefC
   (match s
     [(list 'named-fn (? symbol? fname) (? symbol? param) body)
         (FunDefC fname param (parse body))]
-    [other (error 'parse-fundef "BOOL failed to parse fundef ~e" other)]))
+    [other (error 'parse-fundef "failed to parse fundef ~e" other)]))
 
-
-; parse whole program (not done)
+; parse whole program
 (define (parse-prog [s : Sexp]) : (Listof FunDefC)
   (match s
-    []
-    [other (error 'parse-prog "VEBG: ...")]
+    ['() '()]
+    [(cons fst rst) (cons (parse-fundef fst) (parse-prog rst))]
+    [other (error 'parse-prog "VEBG: failed to parse program ~e" other)]
   ))
 
 
@@ -62,29 +56,23 @@
     [(idC s) (cond
                 [(symbol=? s for) what]
                 [else in])]
-    [(binopC opr l r)]
-    [(ifleq0 test then else)]
+    [(binopC opr l r) ()]
+    [(ifleq0 test then else) ()]
     [(appC fname arg) (appC fname (subst what for args))]))
 
 
-;; Interpret (not fix)
+;; Interpret (not done)
 (define (interp [exp : ExprC] [fds : (Listof FunDefC)]) : Real
   (match exp
     [(numC n) n]
-    [(idC s) (error 'interp "VEBG: BOOL unbound name ~e" s)]
+    [(idC s) (error 'interp "VEBG: unbound name ~e" s)]
     [(binopC opr l r) ((lookup-opr opr) (interp l fds) (interp r fds))]
     [(ifleq0 test then else)]
     [(appC fname arg)
-        (define interpedArg (BoolC (interp arg fds)))
-        (define fd (get-fundef fname fds))
-        (define substFunBody (subst interpedArg
-                                            (FunDefC-param fd)
-                                            (FunDefC-body fd)))
-        (interp substFunBody fds)]
-
+                    (define fd (get-fundef fname fds))
+                    
+                    ]
   ))
-
-
 
 ; interp main from the fundefs
 (define (interp-fns [fds : (Listof FunDefC)]) : Real
@@ -93,6 +81,29 @@
 ;; entry point 
 (define (top-interp [s : Sexp]) : Real
   (interp-fns (parse-prog s)))
+
+
+;; Helper Functions
+
+;; lookup table for operator
+; (define (lookup-opr [opr : Symbol]) : Real
+;     (match opr
+;         []))
+
+;; handling multiple params
+; (define (mult-param []))
+
+;; find the function defintion in the list (from lecture)
+(define (get-fundef [n : Symbol] [fds : (Listof FunDefC)]) : FunDefC
+  (cond
+    [(empty? fds)
+     (error 'get-fundef "VEGB reference to undefined function ~e" n)]
+       [(equal? n (FunDefC-name (first fds))) (first fds)]
+       [else (get-fundef n (rest fds))]))
+
+
+
+
 
 
 ;; Test Cases (check-equal?, check-=, or check-exn forms)
