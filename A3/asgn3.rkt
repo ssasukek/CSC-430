@@ -6,7 +6,7 @@
 ; conditonals -> suppost ifleq0? construct
 ; use lab3 code (s-expression and returns ExprC)
 ; binop (binary operator) 
-; support multi args and param thru subst
+; support multi arg and param thru subst
 ; eager
 
 
@@ -19,24 +19,24 @@
 (struct idC ([sym : Symbol]) #:transparent)
 (struct ifleq0 ([test : ExprC] [then : ExprC] [else : ExprC]) #:transparent)
 (struct binopC ([opr : ExprC] [l : ExprC] [r : ExprC]) #:transparent)
-(struct appC ([fname : Symbol] [args : (Listof ExprC)]) #:transparent)
+(struct appC ([fname : Symbol] [arg : (Listof ExprC)]) #:transparent)
 
 ;; Add a fundefC structure
 (struct FunDefC ([name : Symbol] [param : Symbol] [body : ExprC]) #:transparent)
 
-;; Parser - handle zero or more args
+;; Parser - handle zero or more arg
 ; parses an expression (not done)
 (define (parse [s : Sexp]) : ExprC
     (match s
         [(? real? n) (numC n)]
         [(? symbol? s) (idC s)]
         [(list 'ifleq0? test then else) (ifleq0 (parse test) (parse then) (parse else))]
-        [(list 'binopC) ()]
-        [(list 'appC) ()]
+        [(list 'binopC opr l r) (binopC (parse opr)(parse l) (parse r))]
+        [(list 'appC fname arg) (appC fname (map (parse arg)))]
         [other (error 'parse "VEBG: Syntax error, given invalid term ~e" other)]))
         
 ; parses a function definition (not done?)
-; (parse-fundef '{named-fn f (x y) -> x})
+ (parse-fundef '{named-fn f (x y) -> x})
 (define (parse-fundef [s : Sexp]) : FunDefC
   (match s
     [(list 'named-fn (? symbol? fname) (list (? symbol? param) ...) '-> body)
@@ -59,11 +59,11 @@
     [(idC s) (cond
                 [(symbol=? s for) what]
                 [else in])]
-    [(binopC opr l r) ()]
-    [(ifleq0 test then else) ()]
-    [(appC fname args) (appC fname (subst what for args))]))
+    [(binopC opr l r) (binopC (subst l opr r))]
+    [(ifleq0 test then else) (ifleq0 (subst then test else))]
+    [(appC fname arg) (appC fname (subst what for arg))]))
 
-
+#|
 ;; Interpret (not done)
 (define (interp [exp : ExprC] [fds : (Listof FunDefC)]) : Real
   (match exp
@@ -71,13 +71,13 @@
     [(idC s) (error 'interp "VEBG: unbound name ~e" s)]
     [(binopC opr l r) ((lookup-opr opr) (interp l fds) (interp r fds))]
     [(ifleq0 test then else)]
-    [(appC fname args)
+    [(appC fname arg)
                     (define fd (get-fundef fname fds))
                     
                     ]
   ))
 
-; interp main from the fundefs
+;interp main from the fundefs
 (define (interp-fns [fds : (Listof FunDefC)]) : Real
     (interp (appC 'main '()) fds))
 
@@ -88,7 +88,7 @@
 
 ;; Helper Functions
 
-;; handle multiple param / args
+;; handle multiple param / arg
 (define (multi-subst [what : ExprC] [for : symbol] [in : ExprC]) : ExprC
     (cond
         [(empty? what) in]
@@ -146,3 +146,4 @@
              (interp-fns
               (parse-prog '{{named-fn f (x y) -> {+ x y}}
                             {named-fn main () -> {f 1}}}))))
+|#
