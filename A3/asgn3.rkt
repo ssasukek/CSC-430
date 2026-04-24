@@ -6,7 +6,7 @@
 ; conditonals -> suppost ifleq0? construct
 ; use lab3 code (s-expression and returns ExprC)
 ; binop (binary operator) 
-; support multi arg and param thru subst
+; support multi args and param thru subst
 ; eager
 
 
@@ -19,12 +19,12 @@
 (struct idC ([sym : Symbol]) #:transparent)
 (struct ifleq0 ([test : ExprC] [then : ExprC] [else : ExprC]) #:transparent)
 (struct binopC ([opr : ExprC] [l : ExprC] [r : ExprC]) #:transparent)
-(struct appC ([fname : Symbol] [arg : (Listof ExprC)]) #:transparent)
+(struct appC ([fname : Symbol] [args : (Listof ExprC)]) #:transparent)
 
 ;; Add a fundefC structure
 (struct FunDefC ([name : Symbol] [param : Symbol] [body : ExprC]) #:transparent)
 
-;; Parser - handle zero or more arg
+;; Parser - handle zero or more args
 ; parses an expression (not done)
 (define (parse [s : Sexp]) : ExprC
     (match s
@@ -61,7 +61,7 @@
                 [else in])]
     [(binopC opr l r) ()]
     [(ifleq0 test then else) ()]
-    [(appC fname arg) (appC fname (subst what for args))]))
+    [(appC fname args) (appC fname (subst what for args))]))
 
 
 ;; Interpret (not done)
@@ -71,7 +71,7 @@
     [(idC s) (error 'interp "VEBG: unbound name ~e" s)]
     [(binopC opr l r) ((lookup-opr opr) (interp l fds) (interp r fds))]
     [(ifleq0 test then else)]
-    [(appC fname arg)
+    [(appC fname args)
                     (define fd (get-fundef fname fds))
                     
                     ]
@@ -88,7 +88,7 @@
 
 ;; Helper Functions
 
-;; handle multiple param / arg
+;; handle multiple param / args
 (define (multi-subst [what : ExprC] [for : symbol] [in : ExprC]) : ExprC
     (cond
         [(empty? what) in]
