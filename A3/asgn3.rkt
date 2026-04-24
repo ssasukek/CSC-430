@@ -18,11 +18,11 @@
 (struct numC ([n : Real]) #:transparent)
 (struct idC ([sym : Symbol]) #:transparent)
 (struct ifleq0 ([test : ExprC] [then : ExprC] [else : ExprC]) #:transparent)
-(struct binopC ([opr : ExprC] [l : ExprC] [r : ExprC]) #:transparent)
+(struct binopC ([opr : Symbol] [l : ExprC] [r : ExprC]) #:transparent)
 (struct appC ([fname : Symbol] [args : (Listof ExprC)]) #:transparent)
 
 ;; Add a fundefC structure
-(struct FunDefC ([name : Symbol] [param : Symbol] [body : ExprC]) #:transparent)
+(struct FunDefC ([name : Symbol] [param : (Listof Symbol)] [body : ExprC]) #:transparent)
 
 ;; Parser - handle zero or more args
 ; parses an expression (need test)
@@ -37,14 +37,28 @@
             (for/list : (Listof ExprC) ([sexp (cast args (Listof Sexp))])
               (parse sexp)))]
         [other (error 'parse "VEBG: Syntax error, given invalid term ~e" other)]))
-        
-; parses a function definition (not done?)
- (parse-fundef '{named-fn f (x y) -> x})
+
+;; Test cases for parse
+
+
+
+; parses a function definition (almost done)
+;(parse-fundef '{named-fn f (x y) -> x})
 (define (parse-fundef [s : Sexp]) : FunDefC
   (match s
     [(list 'named-fn (? symbol? fname) (list (? symbol? param) ...) '-> body)
-        (FunDefC fname param (parse body))]
+      (cond 
+        [(duplication? (cast param (Listof Symbol)))
+          (error 'parse-fundef "VEBG: duplicate parameter name in function ~e" fname)]
+        [else
+          (FunDefC fname (cast param (Listof Symbol)) (parse body))])]
     [other (error 'parse-fundef "VEBG: failed to parse fundef ~e" other)]))
+
+;; Test cases for parse-fundef
+
+
+
+
 
 ; parse whole program
 (define (parse-prog [s : Sexp]) : (Listof FunDefC)
@@ -54,17 +68,35 @@
     [other (error 'parse-prog "VEBG: failed to parse program ~e" other)]
   ))
 
+;; Test cases for parse-prog
 
-;; Subsitution (ch5) (not done)
-(define (subst [what : ExprC] [for : symbol] [in : ExprC]) : ExprC
+
+;; Subsitution (ch5) (support multiple or zero argument) (almost done)
+(define (subst [what : (Listof ExprC)] [for : (Listof Symbol)] [in : ExprC]) : ExprC
   (match in
     [(numC n) in]
-    [(idC s) (cond
-                [(symbol=? s for) what]
-                [else in])]
-    [(binopC opr l r) (binopC (subst l opr r))]
-    [(ifleq0 test then else) (ifleq0 (subst then test else))]
-    [(appC fname args) (appC fname (subst what for args))]))
+    [(idC s)
+      (cond
+        [(empty? for) in]
+        [(symbol=? s (first for)) (first what)]
+        [else (subst (rest what) (rest for) in)])]
+
+    [(binopC opr l r) 
+      (binopC opr (subst what for l) (subst what for r))]
+
+    [(ifleq0 test then else) 
+      (ifleq0 (subst what for test) (subst what for then) (subst what for else))]
+
+    [(appC fname args)
+      (define (subst-args [args-lst : (Listof ExprC)]) : (Listof ExprC)
+        (match args-lst
+          ['() '()]
+          [(cons fst rst) (cons (subst what for fst) (subst-args rst))]))
+      (appC fname (subst-args args))]))
+
+;; Test cases for subst + support multiple or zero argument
+
+
 
 
 ;; Interpret (not done)
@@ -72,13 +104,36 @@
   (match exp
     [(numC n) n]
     [(idC s) (error 'interp "VEBG: unbound name ~e" s)]
-    [(binopC opr l r) ((lookup-opr opr) (interp l fds) (interp r fds))]
-    [(ifleq0 test then else)]
+    [(binopC opr l r)
+      (match opr
+        ['+ (+ (interp l fds) (interp r fds))]
+        ['- (- (interp l fds) (interp r fds))]
+        ['* (* (interp l fds) (interp r fds))]
+        ['/ (/ (interp l fds) (interp r fds))]
+        [other (error 'interp "VEBG: invalid operator ~e" other)])]
+
+    [(ifleq0 test then else)
+      (if (<= (interp test fds) 0)
+        (interp then fds)
+        (interp else fds))]
+
     [(appC fname args)
-                    (define fd (get-fundef fname fds))
-                    
-                    ]
-  ))
+      ; 1 evaluate the arguments (for eager)
+      (define (interp-args [args-lst : (Listof ExprC)]) : (Listof ExprC)
+        (match args-lst
+          ['() '()]
+          [(cons fst rst) (cons (numC (interp fst fds)) (interp-args rst))]))
+      ; 2 lookup function body
+      (define fd (get-fundef fname fds))
+      (define params (FunDefC-param fd))
+      ; 3 substitute the argument for the parameter
+      (define subst-body (subst (interp-args args) params (FunDefC-body fd)))
+      ; 4 interp the body
+      (interp subst-body fds)
+      (error 'interp "VEBG: function not implemented ~e" fname)]))
+
+;; Test case for interp
+
 
 
 ;; Helper Functions ;;
@@ -90,7 +145,7 @@
     [else (duplication? (rest lst))]))
 
 ;; lookup table for operator
-(define (lookup-opr [opr : Symbol]) : Real
+(define (lookup-opr [opr : Symbol]) : (Real -> Real)
     (match opr
         ['+ +]
         ['- -]
