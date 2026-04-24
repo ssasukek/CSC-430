@@ -1,3 +1,4 @@
+;; Kevin Lu and Patrick Brook
 ;; TODO
 ; error messages must contain the string "VEBG"
 ; no mutation
