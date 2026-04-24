@@ -69,13 +69,13 @@
 (define (get-fundef [n : Symbol] [fds : (Listof FunDefC)]) : FunDefC
   (cond
     [(empty? fds)
-     (error 'get-fundef "VEBG reference to undefined function ~e" n)]
+     (error 'get-fundef "VEBG: reference to undefined function ~e" n)]
     [(equal? n (FunDefC-name (first fds))) (first fds)]
     [else (get-fundef n (rest fds))]))
 
 ;; Test case for get-fundef
 (check-equal? (get-fundef 'f (list (FunDefC 'f '() (numC 5)))) (FunDefC 'f '() (numC 5)))
-(check-exn #px"VEBG reference to undefined function" (lambda () (get-fundef 'f '())))
+(check-exn #px"VEBG: reference to undefined function" (lambda () (get-fundef 'f '())))
 
 ;; Subsitution (ch5) (support multiple or zero argument) (almost done)
 (define (subst [what : (Listof ExprC)] [for : (Listof Symbol)] [in : ExprC]) : ExprC
@@ -185,7 +185,6 @@
 (define (top-interp [s : Sexp]) : Real
   (interp-fns (parse-prog s)))
 
-
 ;; parse whole program
 (define (parse-prog [s : Sexp]) : (Listof FunDefC)
   (match s
@@ -211,3 +210,14 @@
              (interp-fns
               (parse-prog '{{named-fn f (x y) -> {+ x y}}
                             {named-fn main () -> {f 1}}}))))
+
+;; Test cases for top-interp
+(check-equal? (top-interp '{{named-fn main () -> {+ 1 2}}}) 3)
+(check-equal? (top-interp '{{named-fn add (x y) -> {+ x y}}
+                             {named-fn main () -> {add 3 4}}}) 7)
+(check-equal? (top-interp '{{named-fn main () -> {ifleq0? -1 10 20}}}) 10)
+(check-equal? (top-interp '{{named-fn main () -> {ifleq0? 1 10 20}}}) 20)
+
+(check-exn #px"VEBG: unbound name" (lambda () (top-interp '{{named-fn main () -> x}})))
+(check-exn #px"VEBG: reference to undefined function" (lambda () (top-interp '{{named-fn main () -> {x 1 2}}})))
+(check-exn #px"VEBG: failed to parse program" (lambda () (top-interp 'invalid-program)))
